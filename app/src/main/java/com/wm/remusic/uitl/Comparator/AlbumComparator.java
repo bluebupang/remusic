@@ -12,7 +12,6 @@ public class AlbumComparator implements Comparator<AlbumInfo> {
     public int compare(AlbumInfo a1, AlbumInfo a2) {
         String py1 = a1.album_sort;
         String py2 = a2.album_sort;
-        Log.e("compare", "py1 =  " + py1 + "   py2  = " + py2);
         // 判断是否为空""  
         if (isEmpty(py1) && isEmpty(py2))
             return 0;

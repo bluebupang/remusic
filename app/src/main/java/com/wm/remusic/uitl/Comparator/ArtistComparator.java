@@ -12,7 +12,6 @@ public class ArtistComparator implements Comparator<ArtistInfo> {
     public int compare(ArtistInfo a1, ArtistInfo a2) {
         String py1 = a1.artist_sort;
         String py2 = a2.artist_sort;
-        Log.e("compare", "py1 =  " + py1 + "   py2  = " + py2);
         // 判断是否为空""  
         if (isEmpty(py1) && isEmpty(py2))
             return 0;

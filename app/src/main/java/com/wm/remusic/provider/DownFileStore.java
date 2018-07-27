@@ -122,7 +122,16 @@ public class DownFileStore {
             for (int i = 0; i < results.size(); i++) {
                 t[i] = results.get(i);
             }
-            database.delete(DownFileStoreColumns.NAME, DownFileStoreColumns.ID + " = ?", t);
+            final StringBuilder selection = new StringBuilder();
+            selection.append(DownFileStoreColumns.ID + " IN (");
+            for (int i = 0; i < t.length; i++) {
+                selection.append(t[i]);
+                if (i < t.length - 1) {
+                    selection.append(",");
+                }
+            }
+            selection.append(")");
+            database.delete(DownFileStoreColumns.NAME, selection.toString(), null);
         } finally {
             if (cursor != null) {
                 cursor.close();

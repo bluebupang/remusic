@@ -12,7 +12,6 @@ public class FolderComparator implements Comparator<FolderInfo> {
     public int compare(FolderInfo a1, FolderInfo a2) {
         String py1 = a1.folder_sort;
         String py2 = a2.folder_sort;
-        Log.e("compare", "py1 =  " + py1 + "   py2  = " + py2);
         // 判断是否为空""  
         if (isEmpty(py1) && isEmpty(py2))
             return 0;

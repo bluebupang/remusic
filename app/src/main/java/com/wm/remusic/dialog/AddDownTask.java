@@ -24,6 +24,7 @@ import com.wm.remusic.handler.HandlerUtil;
 import com.wm.remusic.json.MusicFileDownInfo;
 import com.wm.remusic.net.BMA;
 import com.wm.remusic.net.HttpUtil;
+import com.wm.remusic.uitl.IConstants;
 import com.wm.remusic.uitl.PreferencesUtility;
 
 import java.util.ArrayList;
@@ -167,6 +168,7 @@ public class AddDownTask extends DialogFragment {
                             intent.putExtra("artists", artists);
                             intent.putExtra("urls", mList);
                             intent.setAction(DownService.ADD_MULTI_DOWNTASK);
+                            intent.setPackage(IConstants.PACKAGE);
                             mContext.startService(intent);
 
                             dialog.dismiss();

@@ -12,7 +12,6 @@ public class MusicComparator implements Comparator<MusicInfo> {
     public int compare(MusicInfo m1, MusicInfo m2) {
         String py1 = m1.sort;
         String py2 = m2.sort;
-        Log.e("compare", "py1 =  " + py1 + "   py2  = " + py2);
         // 判断是否为空""  
         if (isEmpty(py1) && isEmpty(py2))
             return 0;

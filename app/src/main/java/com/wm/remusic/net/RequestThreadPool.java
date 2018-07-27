@@ -44,7 +44,11 @@ public class RequestThreadPool {
     }
 
     public static void finish() {
-        mInstance.mThreadPoolExec.shutdown();
-        mInstance = null;
+        if(mInstance != null){
+            mInstance.mThreadPoolExec.shutdownNow();
+            mInstance.mThreadPoolExec.purge();
+            mInstance.mThreadPoolExec = null;
+            mInstance = null;
+        }
     }
 }

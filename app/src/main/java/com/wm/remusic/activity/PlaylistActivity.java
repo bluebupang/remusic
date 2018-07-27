@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
 import android.net.Uri;
@@ -18,6 +19,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.TextUtils;
 import android.text.style.ImageSpan;
 import android.util.Log;
 import android.util.SparseArray;
@@ -34,6 +36,7 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.bilibili.magicasakura.widgets.TintImageView;
 import com.facebook.binaryresource.BinaryResource;
 import com.facebook.binaryresource.FileBinaryResource;
 import com.facebook.cache.common.CacheKey;
@@ -113,6 +116,9 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
     private ImageView collectView;
     private FrameLayout favLayout;
     private LinearLayout share;
+    private LoadLocalPlaylistInfo mLoadLocalList;
+    private LoadNetPlaylistInfo mLoadNetList;
+    private ObservableRecyclerView recyclerView;
     private String TAG = "PlaylistActivity";
     private boolean d = true;
 
@@ -225,11 +231,9 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
                         @Override
                         protected Void doInBackground(Void... params) {
                             String albumart = null;
-                            boolean isLocal = false;
                             for (MusicInfo info : adapterList) {
                                 albumart = info.albumData;
-                                if (!albumart.isEmpty()) {
-                                    isLocal = info.islocal;
+                                if (!TextUtils.isEmpty(albumart)) {
                                     break;
                                 }
                             }
@@ -281,7 +285,7 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
     }
 
     private void setList() {
-        ObservableRecyclerView recyclerView = (ObservableRecyclerView) findViewById(R.id.recyclerview);
+        recyclerView = (ObservableRecyclerView) findViewById(R.id.recyclerview);
         recyclerView.setScrollViewCallbacks(PlaylistActivity.this);
         recyclerView.setLayoutManager(new LinearLayoutManager(PlaylistActivity.this));
         recyclerView.setHasFixedSize(true);
@@ -312,14 +316,15 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
         }
         return headerTranslationY;
     }
-
+    
 
     private void loadAllLists() {
 
         if (isLocalPlaylist) {
             loadView = LayoutInflater.from(this).inflate(R.layout.loading, loadFrameLayout, false);
             loadFrameLayout.addView(loadView);
-            new LoadLocalPlaylistInfo().execute();
+            mLoadLocalList = new LoadLocalPlaylistInfo();
+            mLoadLocalList.execute();
             return;
         }
 
@@ -327,7 +332,8 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
             tryAgain.setVisibility(View.GONE);
             loadView = LayoutInflater.from(this).inflate(R.layout.loading, loadFrameLayout, false);
             loadFrameLayout.addView(loadView);
-            new LoadNetPlaylistInfo().execute();
+            mLoadNetList = new LoadNetPlaylistInfo();
+            mLoadNetList.execute();
 
         } else {
             tryAgain.setVisibility(View.VISIBLE);
@@ -350,6 +356,11 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
         }
     }
 
+    @Override
+    public void updateTrack() {
+       mAdapter.notifyDataSetChanged();
+    }
+
     class LoadNetPlaylistInfo extends AsyncTask<Void, Void, Boolean> {
 
         @Override
@@ -369,7 +380,7 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
                     RequestThreadPool.post(new MusicDetailInfoGet(geDanGeInfo.getSong_id(), i, sparseArray));
                 }
                 int tryCount = 0;
-                while (sparseArray.size() != musicCount && tryCount < 1000){
+                while (sparseArray.size() != musicCount && tryCount < 1000 && !isCancelled()){
                     tryCount++;
                     try {
                         Thread.sleep(30);
@@ -377,6 +388,7 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
                         e.printStackTrace();
                     }
                 }
+
 
                 if(sparseArray.size() == musicCount){
                     for (int i = 0; i < mList.size(); i++) {
@@ -399,7 +411,7 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
                     return true;
                 }
 
-            } catch (NullPointerException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
@@ -413,9 +425,17 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
                 tryAgain.setVisibility(View.VISIBLE);
             } else {
                 loadFrameLayout.removeAllViews();
+                recyclerView.setVisibility(View.VISIBLE);
                 mAdapter.updateDataSet(adapterList);
 
             }
+        }
+
+        public void cancleTask(){
+
+            cancel(true);
+            RequestThreadPool.finish();
+            Log.e(TAG," cancled task , + thread" + Thread.currentThread().getName());
         }
     }
 
@@ -442,10 +462,27 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
         super.onPause();
     }
 
+    @Override
+    protected void onDestroy() {
+
+        if(mLoadNetList != null){
+            mLoadNetList.cancleTask();
+        }
+        if(mLoadLocalList != null){
+            mLoadLocalList.cancel(true);
+        }
+        super.onDestroy();
+    }
 
     private void setAlbumart() {
         playlistTitleView.setText(playlistName);
-        albumArtSmall.setImageURI(Uri.parse(albumPath));
+
+        if(albumPath == null){
+            albumArtSmall.setImageResource(R.drawable.placeholder_disk_210);
+        }else {
+            albumArtSmall.setImageURI(Uri.parse(albumPath));
+        }
+
         try {
 
             if (isLocalPlaylist && !URLUtil.isNetworkUrl(albumPath)) {
@@ -605,7 +642,19 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
         public void onBindViewHolder(final RecyclerView.ViewHolder itemHolder, final int i) {
             if (itemHolder instanceof ItemViewHolder) {
                 final MusicInfo localItem = arraylist.get(i - 1);
-                ((ItemViewHolder) itemHolder).trackNumber.setText(i + "");
+
+                //判断该条目音乐是否在播放
+                if (MusicPlayer.getCurrentAudioId() == localItem.songId) {
+                    ((ItemViewHolder) itemHolder).trackNumber.setVisibility(View.GONE);
+                    ((ItemViewHolder) itemHolder).playState.setVisibility(View.VISIBLE);
+                    ((ItemViewHolder) itemHolder).playState.setImageResource(R.drawable.song_play_icon);
+                    ((ItemViewHolder) itemHolder).playState.setImageTintList(R.color.theme_color_primary);
+                } else {
+                    ((ItemViewHolder) itemHolder).playState.setVisibility(View.GONE);
+                    ((ItemViewHolder) itemHolder).trackNumber.setVisibility(View.VISIBLE);
+                    ((ItemViewHolder) itemHolder).trackNumber.setText(i + "");
+                }
+
                 ((ItemViewHolder) itemHolder).title.setText(localItem.musicName);
                 ((ItemViewHolder) itemHolder).artist.setText(localItem.artist);
                 ((ItemViewHolder) itemHolder).menu.setOnClickListener(new View.OnClickListener() {
@@ -674,7 +723,7 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
                          list[i] = info.songId;
                          infos.put(list[i], info);
                      }
-                     if (getAdapterPosition() > 0)
+                     if (getAdapterPosition() > -1)
                          MusicPlayer.playAll(infos, list, 0, false);
                  }
              },70);
@@ -686,6 +735,7 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
         public class ItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
             protected TextView title, artist, trackNumber;
             protected ImageView menu;
+            TintImageView playState;
 
             public ItemViewHolder(View view) {
                 super(view);
@@ -693,6 +743,7 @@ public class PlaylistActivity extends BaseActivity implements ObservableScrollVi
                 this.artist = (TextView) view.findViewById(R.id.song_artist);
                 this.trackNumber = (TextView) view.findViewById(R.id.trackNumber);
                 this.menu = (ImageView) view.findViewById(R.id.popup_menu);
+                this.playState = (TintImageView) view.findViewById(R.id.play_state);
                 view.setOnClickListener(this);
             }
 

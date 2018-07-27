@@ -19,6 +19,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bilibili.magicasakura.widgets.TintImageView;
+import com.wm.remusic.MainApplication;
 import com.wm.remusic.R;
 import com.wm.remusic.info.FolderInfo;
 import com.wm.remusic.info.MusicInfo;
@@ -55,16 +56,16 @@ public class FolderFragment extends BaseFragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mPreferences = PreferencesUtility.getInstance(getActivity());
+        mPreferences = PreferencesUtility.getInstance(mContext);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.recylerview, container, false);
 
-        // folderInfos = MusicUtils.queryFolder(getActivity());
+        // folderInfos = MusicUtils.queryFolder(mContext);
         recyclerView = (RecyclerView) view.findViewById(R.id.recyclerview);
-        layoutManager = new LinearLayoutManager(getActivity());
+        layoutManager = new LinearLayoutManager(mContext);
         recyclerView.setLayoutManager(layoutManager);
 
         mAdapter = new Adapter(null);
@@ -117,7 +118,7 @@ public class FolderFragment extends BaseFragment {
 
     //设置分割线
     private void setItemDecoration() {
-        itemDecoration = new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL_LIST);
+        itemDecoration = new DividerItemDecoration(mContext, DividerItemDecoration.VERTICAL_LIST);
         recyclerView.addItemDecoration(itemDecoration);
     }
 
@@ -156,9 +157,9 @@ public class FolderFragment extends BaseFragment {
             protected Void doInBackground(final Void... unused) {
                 isAZSort = mPreferences.getFoloerSortOrder().equals(SortOrder.FolderSortOrder.FOLDER_A_Z);
                 Log.e("sort", "foler" + isAZSort);
-                List<FolderInfo> folderList = MusicUtils.queryFolder(getContext());
+                List<FolderInfo> folderList = MusicUtils.queryFolder(mContext);
                 for (int i = 0; i < folderList.size(); i++) {
-                    List<MusicInfo> albumList = MusicUtils.queryMusic(getActivity(), folderList.get(i).folder_path, IConstants.START_FROM_FOLDER);
+                    List<MusicInfo> albumList = MusicUtils.queryMusic(MainApplication.context, folderList.get(i).folder_path, IConstants.START_FROM_FOLDER);
                     folderList.get(i).folder_count = albumList.size();
                 }
                 if (isAZSort) {
@@ -192,7 +193,7 @@ public class FolderFragment extends BaseFragment {
 //
 //        @Override
 //        protected String doInBackground(String... params) {
-//            if (getActivity() != null)
+//            if (mContext != null)
 //                mAdapter = new Adapter(folderInfos);
 //            return "Executed";
 //        }
@@ -200,7 +201,7 @@ public class FolderFragment extends BaseFragment {
 //        @Override
 //        protected void onPostExecute(String result) {
 //            recyclerView.setAdapter(mAdapter);
-//            if (getActivity() != null) {
+//            if (mContext != null) {
 //                setItemDecoration();
 //            }
 //        }
@@ -248,7 +249,7 @@ public class FolderFragment extends BaseFragment {
                 holder.moreOverflow.setImageResource(R.drawable.song_play_icon);
                 holder.moreOverflow.setImageTintList(R.color.theme_color_primary);
             } else {
-                holder.moreOverflow.setImageResource(R.drawable.abc_ic_menu_moreoverflow_mtrl_alpha);
+                holder.moreOverflow.setImageResource(R.drawable.list_icn_more);
             }
 
         }
@@ -283,9 +284,9 @@ public class FolderFragment extends BaseFragment {
 
             @Override
             public void onClick(View v) {
-                FragmentTransaction transaction = ((AppCompatActivity) getContext()).getSupportFragmentManager().beginTransaction();
+                FragmentTransaction transaction = ((AppCompatActivity) mContext).getSupportFragmentManager().beginTransaction();
                 FolderDetailFragment fragment = FolderDetailFragment.newInstance(mList.get(getAdapterPosition()).folder_path, false, null);
-                transaction.hide(((AppCompatActivity) getContext()).getSupportFragmentManager().findFragmentById(R.id.tab_container));
+                transaction.hide(((AppCompatActivity) mContext).getSupportFragmentManager().findFragmentById(R.id.tab_container));
                 transaction.add(R.id.tab_container, fragment);
                 transaction.addToBackStack(null).commit();
             }

@@ -1,5 +1,6 @@
 package com.wm.remusic.fragment;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -26,6 +27,7 @@ import com.wm.remusic.R;
 import com.wm.remusic.downmusic.DownService;
 import com.wm.remusic.downmusic.DownloadDBEntity;
 import com.wm.remusic.provider.DownFileStore;
+import com.wm.remusic.uitl.IConstants;
 import com.wm.remusic.uitl.L;
 
 import java.util.ArrayList;
@@ -42,10 +44,10 @@ public class DownFragment extends Fragment {
     private DownLoadAdapter adapter;
     private DownFileStore downFileStore;
     private DownStatus downStatus;
-    private Context mContext;
     private int downPosition = -1;
     private String TAG = "DownFragment";
     private boolean d = true;
+    public Activity mContext;
 
 
     @Nullable
@@ -61,7 +63,7 @@ public class DownFragment extends Fragment {
 
         recyclerView = (RecyclerView) view.findViewById(R.id.recyclerview);
         recyclerView.setHasFixedSize(true);
-        layoutManager = new LinearLayoutManager(getActivity());
+        layoutManager = new LinearLayoutManager(mContext);
         recyclerView.setLayoutManager(layoutManager);
         adapter = new DownLoadAdapter(null, null);
         recyclerView.setAdapter(adapter);
@@ -72,12 +74,13 @@ public class DownFragment extends Fragment {
     }
 
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        mContext = getContext();
 
+    @Override
+    public void onAttach(Activity activity){
+        super.onAttach(activity);
+        this.mContext = activity;
     }
+
 
     @Override
     public void onStart() {
@@ -101,7 +104,7 @@ public class DownFragment extends Fragment {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                downFileStore = DownFileStore.getInstance(getContext());
+                downFileStore = DownFileStore.getInstance(mContext);
                 mList = downFileStore.getDownLoadedListAllDowning();
                 L.D(d, TAG, " mlist size = " + mList.size());
                 return null;
@@ -121,6 +124,7 @@ public class DownFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(DownService.START_ALL_DOWNTASK);
+                intent.setPackage(IConstants.PACKAGE);
                 mContext.startService(intent);
 
 
@@ -130,6 +134,7 @@ public class DownFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(DownService.PAUSE_ALLTASK);
+                intent.setPackage(IConstants.PACKAGE);
                 mContext.startService(intent);
 
             }
@@ -138,6 +143,7 @@ public class DownFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(DownService.CANCLE_ALL_DOWNTASK);
+                intent.setPackage(IConstants.PACKAGE);
                 mContext.startService(intent);
             }
         });
@@ -226,11 +232,13 @@ public class DownFragment extends Fragment {
                     if (isPreparing1) {
                         L.D(d, TAG, "isprepaing");
                         Intent intent = new Intent(DownService.PAUSE_TASK);
+                        intent.setPackage(IConstants.PACKAGE);
                         intent.putExtra("downloadid", task.getDownloadId());
                         mContext.startService(intent);
                     } else {
                         L.D(d, TAG, "not isprepaing");
                         Intent intent = new Intent(DownService.RESUME_START_DOWNTASK);
+                        intent.setPackage(IConstants.PACKAGE);
                         intent.putExtra("downloadid", task.getDownloadId());
                         mContext.startService(intent);
                     }
@@ -241,17 +249,18 @@ public class DownFragment extends Fragment {
             ((ItemViewHolder) holder).clear.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    new AlertDialog.Builder(getActivity()).setTitle("要清除下载吗")
-                            .setPositiveButton(getActivity().getString(R.string.sure), new DialogInterface.OnClickListener() {
+                    new AlertDialog.Builder(mContext).setTitle("要清除下载吗")
+                            .setPositiveButton(mContext.getString(R.string.sure), new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
                                     Intent intent = new Intent(DownService.CANCLE_DOWNTASK);
                                     intent.putExtra("downloadid", task.getDownloadId());
+                                    intent.setPackage(IConstants.PACKAGE);
                                     mContext.startService(intent);
                                     dialog.dismiss();
                                 }
                             })
-                            .setNegativeButton(getActivity().getString(R.string.cancel), new DialogInterface.OnClickListener() {
+                            .setNegativeButton(mContext.getString(R.string.cancel), new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
                                     dialog.dismiss();

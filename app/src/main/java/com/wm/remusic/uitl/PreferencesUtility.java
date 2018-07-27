@@ -19,6 +19,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 public final class PreferencesUtility {
 
@@ -40,6 +41,7 @@ public final class PreferencesUtility {
     private static final String NOW_PLAYNG_THEME_VALUE = "now_playing_theme_value";
     private static final String FAVRIATE_MUSIC_PLAYLIST = "favirate_music_playlist";
     private static final String DOWNMUSIC_BIT = "down_music_bit";
+    private static final String CURRENT_DATE = "currentdate";
 
     private static PreferencesUtility sInstance;
 
@@ -54,6 +56,26 @@ public final class PreferencesUtility {
             sInstance = new PreferencesUtility(context.getApplicationContext());
         }
         return sInstance;
+    }
+
+    public long lastExit(){
+        return mPreferences.getLong("last_err_exit", 0);
+    }
+
+    public void setExitTime(){
+        final SharedPreferences.Editor editor = mPreferences.edit();
+        editor.putLong("last_err_exit", System.currentTimeMillis());
+        editor.commit();
+    }
+
+    public boolean isCurrentDayFirst(String str){
+        return mPreferences.getString(CURRENT_DATE, "").equals(str);
+    }
+
+    public void setCurrentDate(String str){
+        final SharedPreferences.Editor editor = mPreferences.edit();
+        editor.putString(CURRENT_DATE, str);
+        editor.apply();
     }
 
     public void setPlayLink(long id, String link) {

@@ -46,11 +46,8 @@ public class MainFragmentAdapter extends RecyclerView.Adapter<MainFragmentAdapte
     private boolean isLoveList = true;
 
 
-    public MainFragmentAdapter(Context context, ArrayList list, ArrayList<Playlist> playlists) {
-        this.itemResults = new ArrayList();
+    public MainFragmentAdapter(Context context) {
         this.mContext = context;
-        this.itemResults = list;
-        this.playlists = playlists;
     }
 
     public void updateResults(ArrayList itemResults, ArrayList<Playlist> playlists, ArrayList<Playlist> netplaylists) {
@@ -143,13 +140,16 @@ public class MainFragmentAdapter extends RecyclerView.Adapter<MainFragmentAdapte
 
     @Override
     public int getItemCount() {
+        if(itemResults == null){
+            return 0;
+        }
         if (!createdExpanded && playlists != null) {
             itemResults.removeAll(playlists);
         }
         if (!collectExpanded) {
             itemResults.removeAll(netplaylists);
         }
-        return itemResults == null ? 0 : itemResults.size();
+        return itemResults.size();
     }
 
     private void setOnListener(ItemHolder itemHolder, final int position) {
